@@ -12,6 +12,8 @@ void main() async {
     debug: false,
     // Controls whether use http or https if uri doesn't contain the protocol
     autohttps: false,
+    // Header authentication toggle
+    headerAuth: true,
   );
 
   // Checks user authorization status and requests a new token if needed

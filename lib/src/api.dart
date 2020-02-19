@@ -12,6 +12,7 @@ class Api {
   String _token;
   String _uri;
   bool debug = false;
+  bool _headerAuth = true;
 
   Timer _beaconTimer;
   final Map<String, APICacheItem> _responseCache = {};
@@ -21,7 +22,9 @@ class Api {
       String token = '',
       bool autoconnect = false,
       bool debug = false,
-      bool autohttps = true}) {
+      bool autohttps = true,
+      bool headerAuth = true,
+      }) {
     if (this.debug) print('initializing API');
     if (!(uri.startsWith('http://') || uri.startsWith('https://'))) {
       if (autohttps) {
@@ -35,6 +38,7 @@ class Api {
 
     _token = token;
     this.debug = debug;
+    _headerAuth = headerAuth;
     if (autoconnect) {
       connect();
     }
@@ -97,7 +101,9 @@ class Api {
       bool anonymous = false,
       bool encodeFull = false,
       bool apiRoute = true,
-      Map query = const {}}) {
+      Map query = const {},
+      bool overriddenHeaderAuth,
+      }) {
     var slash = '/';
     if (method == '') {
       slash = '';
@@ -108,7 +114,7 @@ class Api {
     if (!apiRoute) slashApi = '';
 
     String uri;
-    if (anonymous) {
+    if (anonymous || (overriddenHeaderAuth ?? _headerAuth)) {
       uri = '$_uri$slashApi$slash$method';
     } else {
       uri = '$_uri$slashApi$slash$method?token=$_token';
@@ -166,7 +172,10 @@ class Api {
     try {
       final response = await http
           .post(Uri.encodeFull(uri),
-              headers: {
+              headers: _headerAuth ? {
+                'Content-Type': 'application/json; charset=utf-8',
+                'Authorization': _token,
+              } : {
                 'Content-Type': 'application/json; charset=utf-8',
               },
               body: binaryData ?? json.encode(data))
