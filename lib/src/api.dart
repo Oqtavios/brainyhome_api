@@ -11,21 +11,32 @@ import 'cache_item.dart';
 class Api {
   String _token;
   String _uri;
+  String _remoteUri;
   bool debug = false;
   bool _headerAuth = true;
+  bool _forceRemote = false;
+  bool _forceLocal = false;
+  Future<bool> Function() _remoteChecker;
+  bool _remote = false;
 
   Timer _beaconTimer;
   final Map<String, APICacheItem> _responseCache = {};
+  bool _ready = false;
+  DateTime _nextReconnectAllowedTime;
 
   Api(
       {@required String uri,
       String token = '',
       bool autoconnect = false,
-      bool debug = false,
+      this.debug = false,
       bool autohttps = true,
       bool headerAuth = true,
+      String remoteUri = '',
+      bool forceRemote = false,
+      bool forceLocal = false,
+      Future<bool> Function() remoteChecker,
       }) {
-    if (this.debug) print('initializing API');
+    if (debug) print('initializing API');
     if (!(uri.startsWith('http://') || uri.startsWith('https://'))) {
       if (autohttps) {
         uri = 'https://$uri';
@@ -33,18 +44,81 @@ class Api {
         uri = 'http://$uri';
       }
     }
+
+    // Remote only supports https
+    if (!(remoteUri.startsWith('https')) && !remoteUri.startsWith('http:')) {
+      remoteUri = 'https://$remoteUri';
+    }
+    if (remoteUri.startsWith('https')) {
+      _remoteUri = remoteUri;
+    }
+
+    _forceRemote = forceRemote;
+    _forceLocal = forceLocal;
+
     _uri = uri;
-    if (this.debug) print(_uri);
+    if (debug) print(_uri);
 
     _token = token;
-    this.debug = debug;
+    _remoteChecker = remoteChecker;
     _headerAuth = headerAuth;
+    _nextReconnectAllowedTime = DateTime.now();
+    
     if (autoconnect) {
-      connect();
+      Future.sync(connect);
     }
   }
 
-  Future<Response> connect() async {
+  void connect() async {
+    _remote = false;
+    _ready = false;
+
+    if (_forceLocal) {
+      _remote = false;
+
+    } else if (_forceRemote) {
+      _remote = true;
+
+    } else if (_remoteChecker != null && await _remoteChecker()) {
+      // Remote checker determined that we should use remote
+      _remote = true;
+
+    } else {
+      // Checker not provided, using built-in determination methods
+      var retval = await call('', anonymous: true, apiRoute: false, timeout: Duration(seconds: 5));
+
+      if (retval.success) {
+        // Connected to local
+        _remote = false;
+
+      } else {
+        // Turning remote on for a bit to check connection
+        _remote = true;
+        retval = await call('', anonymous: true, apiRoute: false, timeout: Duration(seconds: 15));
+        _remote = false;
+
+        if (retval.success) {
+          // Connected to remote
+          _remote = true;
+
+        } else {
+          // Bad connection
+          // Can't connect to remote, switching to local
+          _remote = false;
+        }
+      }
+    }
+
+    // Connection type is determined, API is ready
+    _ready = true;
+    _nextReconnectAllowedTime = DateTime.now().add(Duration(seconds: 20));
+  }
+
+  bool get usingRemote => _remote;
+
+  bool get ready => _ready;
+
+  Future<Response> firstConnect() async {
     if (_token == '') {
       return await call('tokenRequest');
     } else {
@@ -112,12 +186,14 @@ class Api {
     var slashApi = '/api';
 
     if (!apiRoute) slashApi = '';
+    
+    var serverUri = _remote ? _remoteUri : _uri;
 
     String uri;
     if (anonymous || (overriddenHeaderAuth ?? _headerAuth)) {
-      uri = '$_uri$slashApi$slash$method';
+      uri = '$serverUri$slashApi$slash$method';
     } else {
-      uri = '$_uri$slashApi$slash$method?token=$_token';
+      uri = '$serverUri$slashApi$slash$method?token=$_token';
     }
 
     if (query.isNotEmpty) {
@@ -145,7 +221,7 @@ class Api {
     bool cacheErrors = false,
     bool apiRoute = true,
     Duration timeout = const Duration(seconds: 30),
-    Duration cacheMaxAge = const Duration(days: 30),
+    Duration cacheMaxAge = const Duration(days: 7),
   }) async {
     if (cacheName != null) {
       if (_responseCache.containsKey(cacheName) &&
@@ -156,6 +232,16 @@ class Api {
         return Response.fromResponse(_responseCache[cacheName].response,
             cached: true);
       }
+    }
+
+    var notReadyCounter = 0;
+    while (!anonymous && !_ready) {
+      // ADD FEATURE TO WAIT FOR SOME TIME AND THROW AFTER IF NOT READY
+      if (notReadyCounter > 150) {
+        throw TimeoutException('API was not ready for a long time');
+      }
+      await Future.delayed(Duration(milliseconds: 200));
+      notReadyCounter++;
     }
 
     if (debug) {
@@ -207,14 +293,21 @@ class Api {
         }
         return resp;
       }
-    } catch (Exception) {
-      if (debug) print(Exception.toString());
+    } catch (exception) {
+      if (debug) print(exception.toString());
       var resp = Response.fail();
       if (cacheErrors) {
         if (cacheName != null) {
           _responseCache[cacheName] = APICacheItem(
               response: resp, expireTime: DateTime.now().add(cacheMaxAge));
         }
+      }
+
+      if (exception is TimeoutException && _ready && DateTime.now().isAfter(_nextReconnectAllowedTime)) {
+        if (debug) {
+          print('Connection timed out, trying to reconnect');
+        }
+        connect();
       }
       return resp;
     }

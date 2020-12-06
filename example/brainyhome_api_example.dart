@@ -16,8 +16,11 @@ void main() async {
     headerAuth: true,
   );
 
+  // Checking API connection and switching to remote if local not available
+  await api.connect();
+
   // Checks user authorization status and requests a new token if needed
-  var connectResponse = await api.connect();
+  var connectResponse = await api.firstConnect();
   if (connectResponse.success) {
     // Check if server needs additional authentication
     if (connectResponse.data['activationKey'] != null) {
