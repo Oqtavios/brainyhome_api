@@ -46,11 +46,13 @@ class Api {
     }
 
     // Remote only supports https
-    if (!(remoteUri.startsWith('https')) && !remoteUri.startsWith('http:')) {
-      remoteUri = 'https://$remoteUri';
-    }
-    if (remoteUri.startsWith('https')) {
-      _remoteUri = remoteUri;
+    if (_remoteUri != null) {
+      if (!(remoteUri.startsWith('https')) && !remoteUri.startsWith('http:')) {
+        remoteUri = 'https://$remoteUri';
+      }
+      if (remoteUri.startsWith('https')) {
+        _remoteUri = remoteUri;
+      }
     }
 
     _forceRemote = forceRemote;
@@ -314,6 +316,6 @@ class Api {
   }
 
   void dispose() {
-    if (_beaconTimer != null) _beaconTimer.cancel();
+    if (_beaconTimer != null && _beaconTimer.isActive) _beaconTimer.cancel();
   }
 }
