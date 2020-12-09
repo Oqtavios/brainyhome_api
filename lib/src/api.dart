@@ -55,6 +55,10 @@ class Api {
       }
     }
 
+    if (_forceLocal && _forceRemote) {
+      throw(Exception("Can't enforce both local and remote APIs"));
+    }
+
     _forceRemote = forceRemote;
     _forceLocal = forceLocal;
 
@@ -71,7 +75,20 @@ class Api {
     }
   }
 
-  void connect() async {
+  void connect({bool forceLocal = false, bool forceRemote = false, bool resetEnforcements = false}) async {
+    if (resetEnforcements) {
+      _forceLocal = false;
+      _forceRemote = false;
+    }
+
+    if (forceLocal) {
+      _forceRemote = false;
+      _forceLocal = true;
+    } else if (forceRemote) {
+      _forceLocal = false;
+      _forceRemote = true;
+    }
+
     _remote = false;
     _ready = false;
 
