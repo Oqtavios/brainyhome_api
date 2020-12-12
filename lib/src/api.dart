@@ -46,7 +46,7 @@ class Api {
     }
 
     // Remote only supports https
-    if (_remoteUri != null) {
+    if (remoteUri != null) {
       if (!(remoteUri.startsWith('https')) && !remoteUri.startsWith('http:')) {
         remoteUri = 'https://$remoteUri';
       }
