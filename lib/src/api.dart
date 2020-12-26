@@ -18,6 +18,7 @@ class Api {
   bool _forceLocal = false;
   Future<bool> Function() _remoteChecker;
   bool _remote = false;
+  bool forceHttps = false;
 
   Timer _beaconTimer;
   final Map<String, APICacheItem> _responseCache = {};
@@ -34,6 +35,7 @@ class Api {
       String remoteUri = '',
       bool forceRemote = false,
       bool forceLocal = false,
+      bool forceHttps = false,
       Future<bool> Function() remoteChecker,
       }) {
     if (debug) print('initializing API');
@@ -42,6 +44,14 @@ class Api {
         uri = 'https://$uri';
       } else {
         uri = 'http://$uri';
+      }
+
+      if (forceHttps) {
+        if (uri.startsWith('https://')) {
+          _uri = uri;
+        }
+      } else {
+        _uri = uri;
       }
     }
 
@@ -55,14 +65,13 @@ class Api {
       }
     }
 
+    _forceRemote = forceRemote;
+    _forceLocal = forceLocal;
+
     if (_forceLocal && _forceRemote) {
       throw(Exception("Can't enforce both local and remote APIs"));
     }
 
-    _forceRemote = forceRemote;
-    _forceLocal = forceLocal;
-
-    _uri = uri;
     if (debug) print(_uri);
 
     _token = token;
