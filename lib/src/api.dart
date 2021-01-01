@@ -250,6 +250,7 @@ class Api {
     bool apiRoute = true,
     Duration timeout = const Duration(seconds: 30),
     Duration cacheMaxAge = const Duration(days: 7),
+    String contentType = 'application/json; charset=utf-8',
   }) async {
     if (cacheName != null) {
       if (_responseCache.containsKey(cacheName) &&
@@ -287,10 +288,10 @@ class Api {
       final response = await http
           .post(Uri.encodeFull(uri),
               headers: _headerAuth ? {
-                'Content-Type': 'application/json; charset=utf-8',
+                'Content-Type': binaryData != null && contentType != null ? contentType : 'application/json; charset=utf-8',
                 'Authorization': _token,
               } : {
-                'Content-Type': 'application/json; charset=utf-8',
+                'Content-Type': binaryData != null && contentType != null ? contentType : 'application/json; charset=utf-8',
               },
               body: binaryData ?? json.encode(data))
           .timeout(timeout);
