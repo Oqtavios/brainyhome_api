@@ -113,7 +113,7 @@ class Api {
 
     } else {
       // Checker not provided, using built-in determination methods
-      var retval = await call('', anonymous: true, apiRoute: false, timeout: Duration(seconds: 5));
+      var retval = await call('', anonymous: true, apiRoute: false, localTimeout: Duration(seconds: 5));
 
       if (retval.success) {
         // Connected to local
@@ -122,7 +122,7 @@ class Api {
       } else {
         // Turning remote on for a bit to check connection
         _remote = true;
-        retval = await call('', anonymous: true, apiRoute: false, timeout: Duration(seconds: 15));
+        retval = await call('', anonymous: true, apiRoute: false, remoteTimeout: Duration(seconds: 15));
         _remote = false;
 
         if (retval.success) {
@@ -248,7 +248,8 @@ class Api {
     bool refreshCache = false,
     bool cacheErrors = false,
     bool apiRoute = true,
-    Duration timeout = const Duration(seconds: 30),
+    Duration localTimeout = const Duration(seconds: 20),
+    Duration remoteTimeout = const Duration(seconds: 30),
     Duration cacheMaxAge = const Duration(days: 7),
     String contentType = 'application/json; charset=utf-8',
   }) async {
@@ -294,7 +295,7 @@ class Api {
                 'Content-Type': binaryData != null && contentType != null ? contentType : 'application/json; charset=utf-8',
               },
               body: binaryData ?? json.encode(data))
-          .timeout(timeout);
+          .timeout(usingRemote ? remoteTimeout : localTimeout);
 
       if (response.statusCode < 400) {
         if (response.headers['content-type'] == 'application/x-download') {

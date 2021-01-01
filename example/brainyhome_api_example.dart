@@ -53,8 +53,10 @@ void main() async {
       cacheErrors: false,
       // Adds '/api' to the server URI
       apiRoute: true,
-      // Request timeout
-      timeout: Duration(seconds: 10),
+      // Local server request timeout
+      localTimeout: Duration(seconds: 10),
+      // Remote server request timeout
+      remoteTimeout: Duration(seconds: 15),
       // The time after which cache will be refreshed during new request
       cacheMaxAge: Duration(days: 1),
     );
