@@ -1,6 +1,6 @@
 name: brainyhome_api
-description: A Brainy Home API connector plugin
-version: 0.11.1
+description: A Brainy Home API connector package
+version: 0.11.2
 author: Oqtavios
 homepage: https://github.com/Oqtavios/brainyhome_api
 

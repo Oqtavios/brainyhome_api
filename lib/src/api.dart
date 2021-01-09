@@ -54,6 +54,7 @@ class Api {
         _uri = uri;
       }
     }
+    _uri = _addPortIfNotExists(_uri);
 
     // Remote only supports https
     if (remoteUri != null) {
@@ -64,6 +65,7 @@ class Api {
         _remoteUri = remoteUri;
       }
     }
+    _remoteUri = _addPortIfNotExists(_remoteUri);
 
     _forceRemote = forceRemote;
     _forceLocal = forceLocal;
@@ -333,6 +335,24 @@ class Api {
       }
       return resp;
     }
+  }
+
+  String _addPortIfNotExists(String uri) {
+    if (uri != null && (!uri.contains(':') || uri.contains(':') && uri.lastIndexOf(':') < 6)) {
+      var loc = uri.indexOf(':');
+      if (loc == -1) {
+        loc = 0;
+      } else {
+        loc += 3;
+      }
+      loc = uri.indexOf('/', loc);
+      if (loc == -1) {
+        loc = uri.length;
+      }
+      
+      uri = '${uri.substring(0, loc)}:32768${loc < uri.length ? uri.substring(loc, uri.length) : ""}';
+    }
+    return uri;
   }
 
   void dispose() {
