@@ -32,7 +32,7 @@ class Api {
       this.debug = false,
       bool autohttps = true,
       bool headerAuth = true,
-      String remoteUri = '',
+      String remoteUri,
       bool forceRemote = false,
       bool forceLocal = false,
       bool forceHttps = false,
@@ -101,7 +101,7 @@ class Api {
     _remote = false;
     _ready = false;
 
-    if (_forceLocal) {
+    if (_forceLocal || _remoteUri == null) {
       _remote = false;
 
     } else if (_forceRemote) {
@@ -148,22 +148,14 @@ class Api {
 
   Future<Response> firstConnect() async {
     if (_token == '') {
-      return await call('tokenRequest');
+       var response = await call('tokenRequest');
+
+       if (response.success && response.data.containsKey('token')) {
+         _token = response.data['token'];
+       }
+       return response;
     } else {
-      var retval = await call('');
-      if (retval.data != null &&
-          retval.data.containsKey('authorized') &&
-          !retval.data['authorized']) {
-        var newTokenResponse = await call('tokenRequest');
-        if (newTokenResponse.success &&
-            newTokenResponse.data != null &&
-            newTokenResponse.data.containsKey('token')) {
-          _token = newTokenResponse.data['token'];
-        }
-        return newTokenResponse;
-      } else {
-        return Response.fail();
-      }
+      return Response.fail();
     }
   }
 
