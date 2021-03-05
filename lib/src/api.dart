@@ -260,7 +260,6 @@ class Api {
 
     var notReadyCounter = 0;
     while (!anonymous && !_ready) {
-      // ADD FEATURE TO WAIT FOR SOME TIME AND THROW AFTER IF NOT READY
       if (notReadyCounter > 150) {
         throw TimeoutException('API was not ready for a long time');
       }
@@ -335,6 +334,23 @@ class Api {
       }
       return resp;
     }
+  }
+
+  /// Adds currently non-existent items to cache (will not overwrite already existing data)
+  bool appendCache ({
+    String cacheName,
+    Response response,
+    Duration cacheMaxAge = const Duration(days: 7),
+  }) {
+    if (_responseCache.containsKey(cacheName)) {
+      return false;
+    }
+
+    _responseCache[cacheName] = APICacheItem(
+      response: response,
+      expireTime: DateTime.now().add(cacheMaxAge),
+    );
+    return true;
   }
 
   String _addPortIfNotExists(String uri) {
