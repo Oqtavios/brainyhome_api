@@ -280,7 +280,7 @@ class Api {
 
     try {
       final response = await http
-          .post(Uri.encodeFull(uri),
+          .post(Uri.parse(Uri.encodeFull(uri)),
               headers: _headerAuth ? {
                 'Content-Type': binaryData != null && contentType != null ? contentType : 'application/json; charset=utf-8',
                 'Authorization': _token,
