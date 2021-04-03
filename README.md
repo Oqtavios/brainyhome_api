@@ -1,6 +1,6 @@
 # Brainy Home API
-Connector plugin for the Brainy Home API written in Dart.
-You can use this plugin in your Flutter/Dart app for making requests to your smart home server.
+Connector module for the Brainy Home API written in Dart.
+You can use this package in your Flutter/Dart app for making requests to your smart home server.
 
 ## Usage
 
