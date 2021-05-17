@@ -1,11 +1,11 @@
 class Response {
   final bool success;
-  final dynamic data;
-  final dynamic error;
+  final dynamic? data;
+  final dynamic? error;
   final bool isBinary;
   final bool cached;
 
-  Response({this.success,
+  Response({required this.success,
     this.data,
     this.error = false,
     this.isBinary = false,
@@ -36,7 +36,7 @@ class Response {
     );
   }
 
-  factory Response.fromResponse(Response response, {bool cached}) {
+  factory Response.fromResponse(Response response, {bool? cached}) {
     return Response(
       success: response.success,
       data: response.data,

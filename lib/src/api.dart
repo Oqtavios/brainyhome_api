@@ -2,40 +2,39 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
-import 'package:meta/meta.dart';
 
 import 'response.dart';
 import 'cache_item.dart';
 
 class Api {
-  String _token;
-  String _uri;
-  String _remoteUri;
+  String? _token;
+  late String _uri;
+  String? _remoteUri;
   bool debug = false;
   bool _headerAuth = true;
   bool _forceRemote = false;
   bool _forceLocal = false;
-  Future<bool> Function() _remoteChecker;
+  Future<bool> Function()? _remoteChecker;
   bool _remote = false;
   bool forceHttps = false;
 
-  Timer _beaconTimer;
+  Timer? _beaconTimer;
   final Map<String, APICacheItem> _responseCache = {};
   bool _ready = false;
-  DateTime _nextReconnectAllowedTime;
+  late DateTime _nextReconnectAllowedTime;
 
   Api(
-      {@required String uri,
+      {required String uri,
       String token = '',
       bool autoconnect = false,
       this.debug = false,
       bool autohttps = true,
       bool headerAuth = true,
-      String remoteUri,
+      String? remoteUri,
       bool forceRemote = false,
       bool forceLocal = false,
       bool forceHttps = false,
-      Future<bool> Function() remoteChecker,
+      Future<bool> Function()? remoteChecker,
       }) {
     if (debug) print('initializing API');
     if (!(uri.startsWith('http://') || uri.startsWith('https://'))) {
@@ -63,8 +62,8 @@ class Api {
       if (remoteUri.startsWith('https')) {
         _remoteUri = remoteUri;
       }
+      _remoteUri = _addPortIfNotExists(_remoteUri!);
     }
-    _remoteUri = _addPortIfNotExists(_remoteUri);
 
     _forceRemote = forceRemote;
     _forceLocal = forceLocal;
@@ -110,7 +109,7 @@ class Api {
     } else if (_forceRemote) {
       _remote = true;
 
-    } else if (_remoteChecker != null && await _remoteChecker()) {
+    } else if (_remoteChecker != null && await _remoteChecker!()) {
       // Remote checker determined that we should use remote
       _remote = true;
 
@@ -174,7 +173,7 @@ class Api {
   }
 
   /// Starts periodically (every 20 seconds) sending online beacon to the server
-  void startBeacon({Function isForegroundCheck}) {
+  void startBeacon({Function? isForegroundCheck}) {
     _beacon();
     var duration = Duration(seconds: 20);
     _beaconTimer = Timer.periodic(duration, (Timer timer) {
@@ -202,12 +201,12 @@ class Api {
 
   /// Generate complete request URI used in API calls
   String generateMethodUri(
-      {String method,
+      {required String method,
       bool anonymous = false,
       bool encodeFull = false,
       bool apiRoute = true,
       Map query = const {},
-      bool overriddenHeaderAuth,
+      bool? overriddenHeaderAuth,
       }) {
     var slash = '/';
     if (method == '') {
@@ -248,7 +247,7 @@ class Api {
     Map data = const {},
     bool anonymous = false,
     dynamic binaryData,
-    String cacheName,
+    String? cacheName,
     bool refreshCache = false,
     bool cacheErrors = false,
     bool apiRoute = true,
@@ -261,9 +260,9 @@ class Api {
       if (_responseCache.containsKey(cacheName) &&
           _responseCache[cacheName] != null &&
           !refreshCache &&
-          DateTime.now().isBefore(_responseCache[cacheName].expireTime)) {
+          DateTime.now().isBefore(_responseCache[cacheName]!.expireTime)) {
         if (debug) print('cached');
-        return Response.fromResponse(_responseCache[cacheName].response,
+        return Response.fromResponse(_responseCache[cacheName]!.response,
             cached: true);
       }
     }
@@ -292,10 +291,10 @@ class Api {
       final response = await http
           .post(Uri.parse(Uri.encodeFull(uri)),
               headers: _headerAuth ? {
-                'Content-Type': binaryData != null && contentType != null ? contentType : 'application/json; charset=utf-8',
-                'Authorization': _token,
+                'Content-Type': binaryData != null ? contentType : 'application/json; charset=utf-8',
+                'Authorization': _token ?? '',
               } : {
-                'Content-Type': binaryData != null && contentType != null ? contentType : 'application/json; charset=utf-8',
+                'Content-Type': binaryData != null ? contentType : 'application/json; charset=utf-8',
               },
               body: binaryData ?? json.encode(data))
           .timeout(usingRemote ? remoteTimeout : localTimeout);
@@ -348,8 +347,8 @@ class Api {
 
   /// Adds currently non-existent items to cache (will not overwrite already existing data)
   bool appendCache ({
-    String cacheName,
-    Response response,
+    required String cacheName,
+    required Response response,
     Duration cacheMaxAge = const Duration(days: 7),
   }) {
     if (_responseCache.containsKey(cacheName)) {
@@ -365,7 +364,7 @@ class Api {
 
   /// Adds server port to base URI if it wasn't specified during initialization
   String _addPortIfNotExists(String uri) {
-    if (uri != null && (!uri.contains(':') || uri.contains(':') && uri.lastIndexOf(':') < 6)) {
+    if (!uri.contains(':') || uri.contains(':') && uri.lastIndexOf(':') < 6) {
       var loc = uri.indexOf(':');
       if (loc == -1) {
         loc = 0;
@@ -383,6 +382,6 @@ class Api {
   }
 
   void dispose() {
-    if (_beaconTimer != null && _beaconTimer.isActive) _beaconTimer.cancel();
+    if (_beaconTimer != null && _beaconTimer!.isActive) _beaconTimer!.cancel();
   }
 }

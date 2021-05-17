@@ -4,5 +4,5 @@ class APICacheItem {
   final DateTime expireTime;
   final Response response;
 
-  APICacheItem({this.response, this.expireTime});
+  APICacheItem({required this.response, required this.expireTime});
 }

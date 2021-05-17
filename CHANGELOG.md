@@ -1,3 +1,7 @@
+## 0.12.0
+
+- Added null-safety support (BREAKING CHANGE)
+
 ## 0.11.5
 
 - Fixed incorrect token check delay mechanism in tokenIsActivated method
