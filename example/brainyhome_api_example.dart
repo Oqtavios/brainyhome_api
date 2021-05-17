@@ -17,7 +17,7 @@ void main() async {
   );
 
   // Checking API connection and switching to remote if local not available
-  await api.connect();
+  api.connect();
 
   // Checks user authorization status and requests a new token if needed
   var connectResponse = await api.firstConnect();

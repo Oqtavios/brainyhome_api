@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:http/http.dart' as http;
 import 'package:meta/meta.dart';
@@ -86,6 +85,8 @@ class Api {
     }
   }
 
+  /// Determines connection method (local/remote) by checking connection status and server availability.
+  /// Could be called multiple times after initialization to reestablish connection
   void connect({bool forceLocal = false, bool forceRemote = false, bool resetEnforcements = false}) async {
     if (resetEnforcements) {
       _forceLocal = false;
@@ -144,10 +145,14 @@ class Api {
     _nextReconnectAllowedTime = DateTime.now().add(Duration(seconds: 20));
   }
 
+  /// Specifies whether API is connected using remote address
   bool get usingRemote => _remote;
 
+  /// Specifies whether API module is fully initialized and ready to make requests
   bool get ready => _ready;
 
+  /// Method used for getting a new token
+  /// (i.e, first run of an app)
   Future<Response> firstConnect() async {
     if (_token == '') {
        var response = await call('tokenRequest');
@@ -168,6 +173,7 @@ class Api {
     call('beacon');
   }
 
+  /// Starts periodically (every 20 seconds) sending online beacon to the server
   void startBeacon({Function isForegroundCheck}) {
     _beacon();
     var duration = Duration(seconds: 20);
@@ -177,6 +183,8 @@ class Api {
     });
   }
 
+  /// Continuously (respecting the given timeout) check whether is current token is activated.
+  /// Used for waiting for token activation.
   Future<bool> tokenIsActivated({Duration timeout = const Duration(minutes: 2)}) async {
     var status, response;
     var timeToStop = DateTime.now().add(timeout);
@@ -184,7 +192,7 @@ class Api {
       try {
         response = await call('');
         status = response.data['authorized'];
-        sleep(Duration(milliseconds: 250));
+        await Future.delayed(Duration(milliseconds: 250));
       } catch (_) {
         return false;
       }
@@ -192,6 +200,7 @@ class Api {
     return true;
   }
 
+  /// Generate complete request URI used in API calls
   String generateMethodUri(
       {String method,
       bool anonymous = false,
@@ -233,6 +242,7 @@ class Api {
     return uri;
   }
 
+  /// API call
   Future<Response> call(
     String method, {
     Map data = const {},
@@ -353,6 +363,7 @@ class Api {
     return true;
   }
 
+  /// Adds server port to base URI if it wasn't specified during initialization
   String _addPortIfNotExists(String uri) {
     if (uri != null && (!uri.contains(':') || uri.contains(':') && uri.lastIndexOf(':') < 6)) {
       var loc = uri.indexOf(':');

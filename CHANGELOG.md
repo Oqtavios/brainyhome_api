@@ -1,3 +1,56 @@
+## 0.11.5
+
+- Fixed incorrect token check delay mechanism in tokenIsActivated method
+- Prepared the package for publishing
+
+## 0.11.4
+
+- Updated http package
+
+## 0.11.3
+
+- Added appendCache method for adding currently non-existent items to cache
+
+## 0.11.2
+
+- Added port autocompletion if port is not provided
+
+## 0.11.1
+
+- Cleaned firstConnect method 
+- Fixed empty remote URI handling as existing
+
+## 0.11.0
+
+- Split request timeout into local and remote (BREAKING CHANGE)
+
+## 0.10.5
+
+- Added content type changer for requests with binary data
+
+## 0.10.4
+
+- Added https enforcing option
+
+## 0.10.3
+
+- Fixed remote URI checking bug
+
+## 0.10.2
+
+- Added option to change connection enforcements by calling connect method with corresponding parameters. Now you cannot initialize API with both forceLocal and forceRemote set to true.
+
+## 0.10.1
+
+- Fixed API initialization error when remote URI is null
+
+## 0.10.0
+
+- Added built-in support for remote API
+- Breaking change! connect() now checks connectivity and determines whether to use local or remote address
+- firstConnect() replaces old connect()
+- Added options to enforce remote/local APIs
+
 ## 0.9.1
 
 - Added header authentication support and options to control and override it

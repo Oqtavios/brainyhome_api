@@ -10,7 +10,7 @@ A simple usage example:
 import 'package:brainyhome_api/brainyhome_api.dart';
 
 main() async {
-  var api = Api(uri: "path_to_your_server:PORT");
+  var api = Api(uri: "path_to_your_server[:PORT]");
 
   var response = await api.call("aboutme");
   if (response.success) {
