@@ -257,13 +257,27 @@ class Api {
     String contentType = 'application/json; charset=utf-8',
   }) async {
     if (cacheName != null) {
-      if (_responseCache.containsKey(cacheName) &&
-          _responseCache[cacheName] != null &&
-          !refreshCache &&
-          DateTime.now().isBefore(_responseCache[cacheName]!.expireTime)) {
-        if (debug) print('cached');
-        return Response.fromResponse(_responseCache[cacheName]!.response,
-            cached: true);
+      if (_responseCache.containsKey(cacheName) && _responseCache[cacheName] != null && !refreshCache && DateTime.now().isBefore(_responseCache[cacheName]!.expireTime)) {
+        var inProgressCounter = 0;
+        while (_responseCache[cacheName]!.inProgress) {
+          if (debug) print('cached (in progress): $cacheName');
+          if (inProgressCounter > 150) {
+            // skip waiting and make a new request
+            break;
+          }
+          await Future.delayed(Duration(milliseconds: 100));
+        }
+        if (inProgressCounter <= 150) {
+          if (debug) print('cached (ready): $cacheName');
+          return Response.fromResponse(_responseCache[cacheName]!.response,
+              cached: true);
+        } else {
+          if (debug) print('cache in progress wait exceeded, making a new request: $cacheName');
+        }
+      } else {
+        if (debug) print('item not in cache, adding inProgress placeholder: $cacheName');
+        _responseCache[cacheName] = APICacheItem(
+            inProgress: true, response: Response(success: false), expireTime: DateTime.now().add(cacheMaxAge + (usingRemote ? remoteTimeout : localTimeout)));
       }
     }
 
