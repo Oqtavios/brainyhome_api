@@ -17,6 +17,7 @@ class Api {
   Future<bool> Function()? _remoteChecker;
   bool _remote = false;
   bool forceHttps = false;
+  //void Function()? poorConnectionCallback;
 
   Timer? _beaconTimer;
   final Map<String, APICacheItem> _responseCache = {};
@@ -35,6 +36,7 @@ class Api {
       bool forceLocal = false,
       bool forceHttps = false,
       Future<bool> Function()? remoteChecker,
+      //this.poorConnectionCallback,
       }) {
     if (debug) print('initializing API');
     if (!(uri.startsWith('http://') || uri.startsWith('https://'))) {
@@ -333,9 +335,11 @@ class Api {
         return resp;
       } else {
         var resp = Response.fail('statusCode_${response.statusCode}');
-        if (cacheName != null) {
-          _responseCache[cacheName] = APICacheItem(
-              response: resp, expireTime: DateTime.now().add(cacheMaxAge));
+        if (cacheErrors) {
+          if (cacheName != null) {
+            _responseCache[cacheName] = APICacheItem(
+                response: resp, expireTime: DateTime.now().add(cacheMaxAge));
+          }
         }
         return resp;
       }
@@ -398,4 +402,6 @@ class Api {
   void dispose() {
     if (_beaconTimer != null && _beaconTimer!.isActive) _beaconTimer!.cancel();
   }
+
+  void clearCache() => _responseCache.clear();
 }

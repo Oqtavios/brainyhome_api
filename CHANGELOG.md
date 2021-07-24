@@ -1,3 +1,7 @@
+## 0.12.2
+
+- Fixed http errors not respecting cacheErrors parameter
+
 ## 0.12.1
 
 - Added inProgress cache status to decrease multiple calls of one type if there's already a call in progress
