@@ -3,8 +3,8 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
-import 'response.dart';
 import 'cache_item.dart';
+import 'response.dart';
 
 class Api {
   String? _token;
@@ -261,7 +261,7 @@ class Api {
     if (cacheName != null) {
       if (_responseCache.containsKey(cacheName) && _responseCache[cacheName] != null && !refreshCache && DateTime.now().isBefore(_responseCache[cacheName]!.expireTime)) {
         var inProgressCounter = 0;
-        while (_responseCache[cacheName]!.inProgress) {
+        while (_responseCache[cacheName] != null && _responseCache[cacheName]!.inProgress) {
           if (debug) print('cached (in progress): $cacheName');
           if (inProgressCounter > 150) {
             // skip waiting and make a new request
@@ -335,10 +335,12 @@ class Api {
         return resp;
       } else {
         var resp = Response.fail('statusCode_${response.statusCode}');
-        if (cacheErrors) {
-          if (cacheName != null) {
+        if (cacheName != null) {
+          if (cacheErrors) {
             _responseCache[cacheName] = APICacheItem(
                 response: resp, expireTime: DateTime.now().add(cacheMaxAge));
+          } else {
+            _responseCache.remove(cacheName);
           }
         }
         return resp;
@@ -346,10 +348,12 @@ class Api {
     } catch (exception) {
       if (debug) print(exception.toString());
       var resp = Response.fail();
-      if (cacheErrors) {
-        if (cacheName != null) {
+      if (cacheName != null) {
+        if (cacheErrors) {
           _responseCache[cacheName] = APICacheItem(
               response: resp, expireTime: DateTime.now().add(cacheMaxAge));
+        } else {
+          _responseCache.remove(cacheName);
         }
       }
 

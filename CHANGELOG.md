@@ -1,3 +1,7 @@
+## 0.12.3
+
+- Fixed continuous waiting for in-progress cache item if it was failed and cacheErrors is false
+
 ## 0.12.2
 
 - Fixed http errors not respecting cacheErrors parameter
