@@ -6,11 +6,11 @@ void main() {
     Api? api;
 
     setUp(() {
-      api = Api(uri: 'localhost:32768', autohttps: false, autoconnect: false);
+      api = Api(uri: 'localhost:32768', autohttps: true, autoconnect: false, debug: true);
     });
 
     test('generateMethodUri test', () {
-      expect(api!.generateMethodUri(method: 'users') == 'http://localhost:32768/api/users?token=', isTrue);
+      expect(api!.generateMethodUri(method: 'users', overriddenHeaderAuth: false) == 'https://localhost:32768/api/users?token=', isTrue);
     });
   });
 }

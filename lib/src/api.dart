@@ -53,6 +53,8 @@ class Api {
       } else {
         _uri = uri;
       }
+    } else {
+      _uri = uri;
     }
     _uri = _addPortIfNotExists(_uri);
 
@@ -74,7 +76,7 @@ class Api {
       throw(Exception("Can't enforce both local and remote APIs"));
     }
 
-    if (debug) print(_uri);
+    if (debug) print('URI: $_uri Remote URI: $_remoteUri');
 
     _token = token;
     _remoteChecker = remoteChecker;

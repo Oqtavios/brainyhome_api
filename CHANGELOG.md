@@ -1,3 +1,8 @@
+## 0.12.4
+
+- Fixed uri not initializing if it had protocol in it
+- Fixed test expecting token query parameter but using api with header authorization
+
 ## 0.12.3
 
 - Fixed continuous waiting for in-progress cache item if it was failed and cacheErrors is false
