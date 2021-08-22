@@ -91,6 +91,8 @@ class Api {
   /// Determines connection method (local/remote) by checking connection status and server availability.
   /// Could be called multiple times after initialization to reestablish connection
   void connect({bool forceLocal = false, bool forceRemote = false, bool resetEnforcements = false}) async {
+    var unstable = false;
+
     if (resetEnforcements) {
       _forceLocal = false;
       _forceRemote = false;
@@ -118,7 +120,7 @@ class Api {
       _remote = true;
 
     } else {
-      // Checker not provided, using built-in determination methods
+      // Local connect is possible / checker not provided
       var retval = await call('', anonymous: true, apiRoute: false, localTimeout: Duration(seconds: 5));
 
       if (retval.success) {
@@ -137,15 +139,20 @@ class Api {
 
         } else {
           // Bad connection
-          // Can't connect to remote, switching to local
-          _remote = false;
+          // Can't connect to remote (but local is also unavailable), setting short reconnection timeout
+          _remote = true;
+          unstable = true;
         }
       }
     }
 
     // Connection type is determined, API is ready
     _ready = true;
-    _nextReconnectAllowedTime = DateTime.now().add(Duration(seconds: 20));
+    if (unstable) {
+      _nextReconnectAllowedTime = DateTime.now().add(Duration(seconds: 5));
+    } else {
+      _nextReconnectAllowedTime = DateTime.now().add(Duration(seconds: 20));
+    }
   }
 
   /// Specifies whether API is connected using remote address
