@@ -266,6 +266,7 @@ class Api {
     Duration remoteTimeout = const Duration(seconds: 30),
     Duration cacheMaxAge = const Duration(days: 7),
     String contentType = 'application/json; charset=utf-8',
+    bool isCombinedRequest = false,
   }) async {
     if (cacheName != null) {
       if (_responseCache.containsKey(cacheName) && _responseCache[cacheName] != null && !refreshCache && DateTime.now().isBefore(_responseCache[cacheName]!.expireTime)) {
@@ -288,7 +289,23 @@ class Api {
       } else {
         if (debug) print('item not in cache, adding inProgress placeholder: $cacheName');
         _responseCache[cacheName] = APICacheItem(
-            inProgress: true, response: Response(success: false), expireTime: DateTime.now().add(cacheMaxAge + (usingRemote ? remoteTimeout : localTimeout)));
+          inProgress: true,
+          response: Response(success: false),
+          expireTime: DateTime.now().add(cacheMaxAge + (usingRemote ? remoteTimeout : localTimeout)),
+        );
+
+        if (isCombinedRequest) {
+          _responseCache.updateAll((key, value) {
+            if (key.startsWith('${cacheName}_combinedMember_')) {
+              return APICacheItem(
+                inProgress: true,
+                response: Response(success: false),
+                expireTime: DateTime.now().add(cacheMaxAge + (usingRemote ? remoteTimeout : localTimeout)),
+              );
+            }
+            return value;
+          });
+        }
       }
     }
 
@@ -313,16 +330,15 @@ class Api {
     );
 
     try {
-      final response = await http
-          .post(Uri.parse(Uri.encodeFull(uri)),
-              headers: _headerAuth ? {
-                'Content-Type': binaryData != null ? contentType : 'application/json; charset=utf-8',
-                'Authorization': _token ?? '',
-              } : {
-                'Content-Type': binaryData != null ? contentType : 'application/json; charset=utf-8',
-              },
-              body: binaryData ?? json.encode(data))
-          .timeout(usingRemote ? remoteTimeout : localTimeout);
+      final response = await http.post(Uri.parse(Uri.encodeFull(uri)),
+        headers: _headerAuth ? {
+          'Content-Type': binaryData != null ? contentType : 'application/json; charset=utf-8',
+          'Authorization': _token ?? '',
+        } : {
+          'Content-Type': binaryData != null ? contentType : 'application/json; charset=utf-8',
+        },
+        body: binaryData ?? json.encode(data),
+      ).timeout(usingRemote ? remoteTimeout : localTimeout);
 
       if (response.statusCode < 400) {
         if (response.headers['content-type'] == 'application/x-download') {
@@ -336,10 +352,28 @@ class Api {
         }
 
         var responseData = json.decode(response.body);
-        var resp = Response.fromJson(responseData);
+
+        /*bool? sameAsCached;
+        if (cacheName != null && _responseCache[cacheName] != null) {
+          sameAsCached = responseData == _responseCache[cacheName];
+        }*/
+
+        var resp = Response.fromJson(responseData/*, sameAsCached: sameAsCached*/);
+
         if (cacheName != null) {
           _responseCache[cacheName] = APICacheItem(
               response: resp, expireTime: DateTime.now().add(cacheMaxAge));
+
+          if (isCombinedRequest && resp.data['isCombinedRequest'] == true && resp.data['combinedMembers'] is List) {
+            for (var item in resp.data['combinedMembers']) {
+              if (resp.data[item] != null) {
+                _responseCache['${cacheName}_combinedMember_$item'] = APICacheItem(
+                  response: Response.fromJson(resp.data[item]),
+                  expireTime: DateTime.now().add(cacheMaxAge),
+                );
+              }
+            }
+          }
         }
         return resp;
       } else {

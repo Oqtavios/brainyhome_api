@@ -1,21 +1,24 @@
 class Response {
   final bool success;
-  final dynamic? data;
-  final dynamic? error;
+  final dynamic data;
+  final dynamic error;
   final bool isBinary;
   final bool cached;
+  //final bool? sameAsCached;
 
   Response({required this.success,
     this.data,
     this.error = false,
     this.isBinary = false,
-    this.cached = false});
+    this.cached = false,
+    //this.sameAsCached,
+  });
 
   factory Response.fail([String error = 'networkError']) {
     return Response(success: false, data: null, error: error, isBinary: false);
   }
 
-  factory Response.fromJson(Map<String, dynamic> json, {bool cached = false}) {
+  factory Response.fromJson(Map<String, dynamic> json, {bool cached = false/*, bool? sameAsCached*/}) {
     bool success;
     dynamic error;
     // ignore: prefer_if_null_operators
@@ -33,6 +36,7 @@ class Response {
       error: error,
       isBinary: false,
       cached: cached,
+      //sameAsCached: sameAsCached,
     );
   }
 

@@ -1,3 +1,7 @@
+## 0.12.6
+
+- Added combined requests support
+
 ## 0.12.5
 
 - During connect, if connection to either local and remote URIs cannot be established, default address will be set to remote and reconnection timeout will be short
