@@ -366,9 +366,10 @@ class Api {
 
           if (isCombinedRequest && resp.data['isCombinedRequest'] == true && resp.data['combinedMembers'] is List) {
             for (var item in resp.data['combinedMembers']) {
-              if (resp.data[item] != null) {
+              var itemData = jsonDecode(response.body)[item];
+              if (itemData != null && itemData is Map<String,dynamic>) {
                 _responseCache['${cacheName}_combinedMember_$item'] = APICacheItem(
-                  response: Response.fromJson(resp.data[item]),
+                  response: Response.fromJson(itemData),
                   expireTime: DateTime.now().add(cacheMaxAge),
                 );
               }

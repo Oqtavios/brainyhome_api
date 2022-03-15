@@ -1,3 +1,8 @@
+## 0.12.7
+
+- Now making shallow copies when putting combined members into cache
+- Added dataHashCode parameter to the Response. It should remain the same as long data isn't changed
+
 ## 0.12.6
 
 - Added combined requests support

@@ -5,6 +5,7 @@ class Response {
   final bool isBinary;
   final bool cached;
   //final bool? sameAsCached;
+  final int dataHashCode;
 
   Response({required this.success,
     this.data,
@@ -12,7 +13,7 @@ class Response {
     this.isBinary = false,
     this.cached = false,
     //this.sameAsCached,
-  });
+  }) : dataHashCode = data.toString().hashCode;
 
   factory Response.fail([String error = 'networkError']) {
     return Response(success: false, data: null, error: error, isBinary: false);
