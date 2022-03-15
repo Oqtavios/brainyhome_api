@@ -1,4 +1,8 @@
-## 0.12.7
+## 0.12.7+1
+
+- Fixed dataHashCode being changed when retrieving data from cache because cached value was changed (by accessing Response.data members)
+
+- ## 0.12.7
 
 - Now making shallow copies when putting combined members into cache
 - Added dataHashCode parameter to the Response. It should remain the same as long data isn't changed

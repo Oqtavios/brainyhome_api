@@ -13,7 +13,8 @@ class Response {
     this.isBinary = false,
     this.cached = false,
     //this.sameAsCached,
-  }) : dataHashCode = data.toString().hashCode;
+    dataHashCode,
+  }) : dataHashCode = dataHashCode ?? data.toString().hashCode;
 
   factory Response.fail([String error = 'networkError']) {
     return Response(success: false, data: null, error: error, isBinary: false);
@@ -48,6 +49,7 @@ class Response {
       error: response.error,
       isBinary: response.isBinary,
       cached: cached ?? response.cached,
+      dataHashCode: response.dataHashCode,
     );
   }
 }
