@@ -267,6 +267,7 @@ class Api {
     Duration cacheMaxAge = const Duration(days: 7),
     String contentType = 'application/json; charset=utf-8',
     bool isCombinedRequest = false,
+    bool dontOverwriteCacheIfHashIsIdentical = false,
   }) async {
     if (cacheName != null) {
       if (_responseCache.containsKey(cacheName) && _responseCache[cacheName] != null && !refreshCache && DateTime.now().isBefore(_responseCache[cacheName]!.expireTime)) {
@@ -288,11 +289,13 @@ class Api {
         }
       } else {
         if (debug) print('item not in cache, adding inProgress placeholder: $cacheName');
-        _responseCache[cacheName] = APICacheItem(
-          inProgress: true,
-          response: Response(success: false),
-          expireTime: DateTime.now().add(cacheMaxAge + (usingRemote ? remoteTimeout : localTimeout)),
-        );
+        if (!dontOverwriteCacheIfHashIsIdentical || dontOverwriteCacheIfHashIsIdentical && _responseCache[cacheName] == null) {
+          _responseCache[cacheName] = APICacheItem(
+            inProgress: true,
+            response: Response(success: false),
+            expireTime: DateTime.now().add(cacheMaxAge + (usingRemote ? remoteTimeout : localTimeout)),
+          );
+        }
 
         if (isCombinedRequest) {
           _responseCache.updateAll((key, value) {
@@ -361,8 +364,22 @@ class Api {
         var resp = Response.fromJson(responseData/*, sameAsCached: sameAsCached*/);
 
         if (cacheName != null) {
-          _responseCache[cacheName] = APICacheItem(
-              response: resp, expireTime: DateTime.now().add(cacheMaxAge));
+          if (debug && dontOverwriteCacheIfHashIsIdentical) {
+            print('old ${_responseCache[cacheName]!.response.dataHashCode} new ${resp.dataHashCode} old data is null: ${_responseCache[cacheName]!.response.data == null}');
+          }
+          if (dontOverwriteCacheIfHashIsIdentical && _responseCache[cacheName] is APICacheItem && resp.dataHashCode == _responseCache[cacheName]!.response.dataHashCode) {
+            if (debug) print('cache is identical');
+            _responseCache[cacheName] = APICacheItem(
+              response: _responseCache[cacheName]!.response,
+              expireTime: DateTime.now().add(cacheMaxAge),
+            );
+          } else {
+            if (debug && dontOverwriteCacheIfHashIsIdentical) print('cache is not');
+            _responseCache[cacheName] = APICacheItem(
+              response: resp,
+              expireTime: DateTime.now().add(cacheMaxAge),
+            );
+          }
 
           if (isCombinedRequest && resp.data['isCombinedRequest'] == true && resp.data['combinedMembers'] is List) {
             for (var item in resp.data['combinedMembers']) {

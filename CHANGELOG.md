@@ -1,3 +1,7 @@
+## 0.12.8
+
+- Added dontOverwriteCacheIfHashIsIdentical parameter
+
 ## 0.12.7+1
 
 - Fixed dataHashCode being changed when retrieving data from cache because cached value was changed (by accessing Response.data members)
