@@ -1,3 +1,7 @@
+## 0.12.9
+
+- Updated dependencies
+
 ## 0.12.8
 
 - Added dontOverwriteCacheIfHashIsIdentical parameter
