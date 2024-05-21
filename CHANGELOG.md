@@ -1,3 +1,8 @@
+## 0.12.10
+
+- Added support for applicationName/tokenName in firstConnect
+- Updated dependencies
+
 ## 0.12.9
 
 - Updated dependencies

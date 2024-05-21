@@ -163,14 +163,23 @@ class Api {
 
   /// Method used for getting a new token
   /// (i.e, first run of an app)
-  Future<Response> firstConnect() async {
+  Future<Response> firstConnect({String? applicationName}) async {
     if (_token == '') {
-       var response = await call('tokenRequest');
+      if (applicationName != null && (applicationName.length < 2 || applicationName.length > 64)) {
+        applicationName = null;
+      }
+      
+      var response = await call(
+        'tokenRequest',
+        data: {
+          if (applicationName != null) 'tokenName': applicationName,
+        },
+      );
 
-       if (response.success && response.data.containsKey('token')) {
-         _token = response.data['token'];
-       }
-       return response;
+      if (response.success && response.data.containsKey('token')) {
+        _token = response.data['token'];
+      }
+      return response;
     } else {
       return Response.fail();
     }
@@ -196,12 +205,12 @@ class Api {
   /// Continuously (respecting the given timeout) check whether is current token is activated.
   /// Used for waiting for token activation.
   Future<bool> tokenIsActivated({Duration timeout = const Duration(minutes: 2)}) async {
-    var status, response;
+    var status = false;
     var timeToStop = DateTime.now().add(timeout);
     do {
       try {
-        response = await call('');
-        status = response.data['authorized'];
+        var response = await call('');
+        status = response.data['authorized'] == true;
         await Future.delayed(Duration(milliseconds: 250));
       } catch (_) {
         return false;
