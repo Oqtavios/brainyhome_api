@@ -1,9 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:http/http.dart' as http;
-
 import 'cache_item.dart';
+import 'client.dart';
 import 'response.dart';
 
 class Api {
@@ -23,22 +22,25 @@ class Api {
   final Map<String, APICacheItem> _responseCache = {};
   bool _ready = false;
   late DateTime _nextReconnectAllowedTime;
+  late final BrainyHomeApiClient httpClient;
 
-  Api(
-      {required String uri,
-      String token = '',
-      bool autoconnect = false,
-      this.debug = false,
-      bool autohttps = true,
-      bool headerAuth = true,
-      String? remoteUri,
-      bool forceRemote = false,
-      bool forceLocal = false,
-      bool forceHttps = false,
-      Future<bool> Function()? remoteChecker,
-      //this.poorConnectionCallback,
-      }) {
-    if (debug) print('initializing API');
+  Api({
+    required String uri,
+    String token = '',
+    bool autoconnect = false,
+    this.debug = false,
+    bool autohttps = true,
+    bool headerAuth = true,
+    String? remoteUri,
+    bool forceRemote = false,
+    bool forceLocal = false,
+    bool forceHttps = false,
+    Future<bool> Function()? remoteChecker,
+    //this.poorConnectionCallback,
+    String? appName,
+    String? appVersion,
+  }) {
+    if (debug) print('Initializing Brainy Home API');
     if (!(uri.startsWith('http://') || uri.startsWith('https://'))) {
       if (autohttps) {
         uri = 'https://$uri';
@@ -82,6 +84,10 @@ class Api {
     _remoteChecker = remoteChecker;
     _headerAuth = headerAuth;
     _nextReconnectAllowedTime = DateTime.now();
+    httpClient = BrainyHomeApiClient(
+      appName: appName,
+      appVersion: appVersion,
+    );
     
     if (autoconnect) {
       Future.sync(connect);
@@ -342,7 +348,7 @@ class Api {
     );
 
     try {
-      final response = await http.post(Uri.parse(Uri.encodeFull(uri)),
+      final response = await httpClient.post(Uri.parse(Uri.encodeFull(uri)),
         headers: _headerAuth ? {
           'Content-Type': binaryData != null ? contentType : 'application/json; charset=utf-8',
           'Authorization': _token ?? '',

@@ -1,3 +1,8 @@
+## 0.12.11
+
+- Added custom user agent and http client
+- Updated dependencies and minimum Dart version
+
 ## 0.12.10
 
 - Added support for applicationName/tokenName in firstConnect
