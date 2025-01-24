@@ -1,6 +1,6 @@
 import 'package:http/http.dart' as http;
 
-const packageVersion = '0.12.11';  // TODO: Update version on new release
+const packageVersion = '0.12.12';  // TODO: Update version on new release
 
 class BrainyHomeApiClient extends http.BaseClient {
   final String? appName;

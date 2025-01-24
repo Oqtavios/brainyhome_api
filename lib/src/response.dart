@@ -6,6 +6,7 @@ class Response {
   final bool cached;
   //final bool? sameAsCached;
   final int dataHashCode;
+  final String? binaryFileName;
 
   Response({required this.success,
     this.data,
@@ -14,6 +15,7 @@ class Response {
     this.cached = false,
     //this.sameAsCached,
     int? dataHashCode,
+    this.binaryFileName,
   }) : dataHashCode = dataHashCode ?? data.toString().hashCode;
 
   factory Response.fail([String error = 'networkError']) {
@@ -50,6 +52,7 @@ class Response {
       isBinary: response.isBinary,
       cached: cached ?? response.cached,
       dataHashCode: response.dataHashCode,
+      binaryFileName: response.binaryFileName,
     );
   }
 }

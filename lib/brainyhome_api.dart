@@ -1,5 +1,5 @@
 /// A Brainy Home API connector plugin.
-library brainyhome_api;
+library;
 
 export 'src/api.dart';
 export 'src/response.dart';

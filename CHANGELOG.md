@@ -1,3 +1,7 @@
+## 0.12.12
+
+- Added support for binary file name
+
 ## 0.12.11
 
 - Added custom user agent and http client

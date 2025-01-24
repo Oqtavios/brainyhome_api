@@ -203,8 +203,7 @@ class Api {
     _beacon();
     var duration = Duration(seconds: 20);
     _beaconTimer = Timer.periodic(duration, (Timer timer) {
-      if (isForegroundCheck != null && isForegroundCheck() ||
-          isForegroundCheck == null) _beacon();
+      if (isForegroundCheck != null && isForegroundCheck() || isForegroundCheck == null) _beacon();
     });
   }
 
@@ -360,8 +359,8 @@ class Api {
 
       if (response.statusCode < 400) {
         if (response.headers['content-type'] == 'application/x-download') {
-          var resp =
-              Response(success: true, data: response.bodyBytes, isBinary: true);
+          final binaryFileName = response.headers['content-disposition']?.split('filename=').lastOrNull?.replaceAll('"', '').replaceAll("'", '');
+          var resp = Response(success: true, data: response.bodyBytes, isBinary: true, binaryFileName: binaryFileName);
           if (cacheName != null) {
             _responseCache[cacheName] = APICacheItem(
                 response: resp, expireTime: DateTime.now().add(cacheMaxAge));
