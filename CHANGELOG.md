@@ -1,3 +1,7 @@
+## 0.12.13
+
+- Fixed empty file names being returned as "attachment"
+
 ## 0.12.12
 
 - Added support for binary file name

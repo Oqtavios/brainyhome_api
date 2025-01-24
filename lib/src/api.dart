@@ -359,7 +359,7 @@ class Api {
 
       if (response.statusCode < 400) {
         if (response.headers['content-type'] == 'application/x-download') {
-          final binaryFileName = response.headers['content-disposition']?.split('filename=').lastOrNull?.replaceAll('"', '').replaceAll("'", '');
+          final binaryFileName = response.headers['content-disposition']?.ifContainsFilename()?.split('filename=').lastOrNull?.replaceAll('"', '').replaceAll("'", '');
           var resp = Response(success: true, data: response.bodyBytes, isBinary: true, binaryFileName: binaryFileName);
           if (cacheName != null) {
             _responseCache[cacheName] = APICacheItem(
@@ -483,4 +483,12 @@ class Api {
   }
 
   void clearCache() => _responseCache.clear();
+}
+
+
+extension _FilenameCheck on String {
+  String? ifContainsFilename() {
+    if (contains('filename=')) return this;
+    return null;
+  }
 }
