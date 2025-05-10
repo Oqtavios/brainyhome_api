@@ -1,3 +1,9 @@
+## 0.12.14
+
+- Added support for server version header
+- Added remote mode override for "generateMethodUri"
+- Decreased cycle delay for cache in progress calls
+
 ## 0.12.13
 
 - Fixed empty file names being returned as "attachment"

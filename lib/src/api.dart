@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'cache_item.dart';
 import 'client.dart';
 import 'response.dart';
+import 'utils.dart';
 
 class Api {
   String? _token;
@@ -58,7 +59,7 @@ class Api {
     } else {
       _uri = uri;
     }
-    _uri = _addPortIfNotExists(_uri);
+    _uri = addPortIfNotExists(_uri);
 
     // Remote only supports https
     if (remoteUri != null) {
@@ -68,7 +69,7 @@ class Api {
       if (remoteUri.startsWith('https')) {
         _remoteUri = remoteUri;
       }
-      _remoteUri = _addPortIfNotExists(_remoteUri!);
+      _remoteUri = addPortIfNotExists(_remoteUri!);
     }
 
     _forceRemote = forceRemote;
@@ -225,14 +226,15 @@ class Api {
   }
 
   /// Generate complete request URI used in API calls
-  String generateMethodUri(
-      {required String method,
-      bool anonymous = false,
-      bool encodeFull = false,
-      bool apiRoute = true,
-      Map query = const {},
-      bool? overriddenHeaderAuth,
-      }) {
+  String generateMethodUri({
+    required String method,
+    bool anonymous = false,
+    bool encodeFull = false,
+    bool apiRoute = true,
+    Map query = const {},
+    bool? overriddenHeaderAuth,
+    bool? overriddenRemote,
+  }) {
     var slash = '/';
     if (method == '') {
       slash = '';
@@ -242,7 +244,7 @@ class Api {
 
     if (!apiRoute) slashApi = '';
     
-    var serverUri = _remote ? _remoteUri : _uri;
+    var serverUri = _remote && overriddenRemote != false || overriddenRemote == true ? _remoteUri : _uri;
 
     String uri;
     if (anonymous || (overriddenHeaderAuth ?? _headerAuth)) {
@@ -288,13 +290,13 @@ class Api {
         var inProgressCounter = 0;
         while (_responseCache[cacheName] != null && _responseCache[cacheName]!.inProgress) {
           if (debug) print('cached (in progress): $cacheName');
-          if (inProgressCounter > 150) {
+          if (inProgressCounter > 1500) {
             // skip waiting and make a new request
             break;
           }
-          await Future.delayed(Duration(milliseconds: 100));
+          await Future.delayed(Duration(milliseconds: 10));
         }
-        if (inProgressCounter <= 150) {
+        if (inProgressCounter <= 1500) {
           if (debug) print('cached (ready): $cacheName');
           return Response.fromResponse(_responseCache[cacheName]!.response,
               cached: true);
@@ -360,10 +362,20 @@ class Api {
       if (response.statusCode < 400) {
         if (response.headers['content-type'] == 'application/x-download') {
           final binaryFileName = response.headers['content-disposition']?.ifContainsFilename()?.split('filename=').lastOrNull?.replaceAll('"', '').replaceAll("'", '');
-          var resp = Response(success: true, data: response.bodyBytes, isBinary: true, binaryFileName: binaryFileName);
+          final serverVersion = response.headers['bh-version']?.toLowerCase();
+
+          final resp = Response(
+            success: true,
+            data: response.bodyBytes,
+            isBinary: true,
+            binaryFileName: binaryFileName,
+            serverVersion: validateServerVersion(serverVersion) ? serverVersion : null,
+          );
           if (cacheName != null) {
             _responseCache[cacheName] = APICacheItem(
-                response: resp, expireTime: DateTime.now().add(cacheMaxAge));
+              response: resp,
+              expireTime: DateTime.now().add(cacheMaxAge),
+            );
           }
           return resp;
         }
@@ -426,7 +438,9 @@ class Api {
       if (cacheName != null) {
         if (cacheErrors) {
           _responseCache[cacheName] = APICacheItem(
-              response: resp, expireTime: DateTime.now().add(cacheMaxAge));
+            response: resp,
+            expireTime: DateTime.now().add(cacheMaxAge),
+            );
         } else {
           _responseCache.remove(cacheName);
         }
@@ -457,25 +471,6 @@ class Api {
       expireTime: DateTime.now().add(cacheMaxAge),
     );
     return true;
-  }
-
-  /// Adds server port to base URI if it wasn't specified during initialization
-  String _addPortIfNotExists(String uri) {
-    if (!uri.contains(':') || uri.contains(':') && uri.lastIndexOf(':') < 6) {
-      var loc = uri.indexOf(':');
-      if (loc == -1) {
-        loc = 0;
-      } else {
-        loc += 3;
-      }
-      loc = uri.indexOf('/', loc);
-      if (loc == -1) {
-        loc = uri.length;
-      }
-      
-      uri = '${uri.substring(0, loc)}:32768${loc < uri.length ? uri.substring(loc, uri.length) : ""}';
-    }
-    return uri;
   }
 
   void dispose() {

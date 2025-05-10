@@ -7,6 +7,7 @@ class Response {
   //final bool? sameAsCached;
   final int dataHashCode;
   final String? binaryFileName;
+  final String? serverVersion;
 
   Response({required this.success,
     this.data,
@@ -16,6 +17,7 @@ class Response {
     //this.sameAsCached,
     int? dataHashCode,
     this.binaryFileName,
+    this.serverVersion,
   }) : dataHashCode = dataHashCode ?? data.toString().hashCode;
 
   factory Response.fail([String error = 'networkError']) {
@@ -23,17 +25,9 @@ class Response {
   }
 
   factory Response.fromJson(Map<String, dynamic> json, {bool cached = false/*, bool? sameAsCached*/}) {
-    bool success;
-    dynamic error;
-    // ignore: prefer_if_null_operators
-    success = json['success'] != null
-        ? json['success']
-        : json['error'] == null ? true : false;
-    if (json.containsKey('error')) {
-      error = json['error'];
-    } else {
-      error = null;
-    }
+    final success = json['success'] ?? (json['error'] == null ? true : false);
+    final error = json['error'];
+    
     return Response(
       success: success,
       data: json,
@@ -53,6 +47,7 @@ class Response {
       cached: cached ?? response.cached,
       dataHashCode: response.dataHashCode,
       binaryFileName: response.binaryFileName,
+      serverVersion: response.serverVersion,
     );
   }
 }
