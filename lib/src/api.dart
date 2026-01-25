@@ -6,6 +6,8 @@ import 'client.dart';
 import 'response.dart';
 import 'utils.dart';
 
+const Duration beaconInterval = Duration(seconds: 20);
+
 class Api {
   String? _token;
   late String _uri;
@@ -192,7 +194,7 @@ class Api {
     }
   }
 
-  void _beacon() async {
+  void beacon() {
     if (_token == '') {
       throw Exception('Empty token');
     }
@@ -201,10 +203,9 @@ class Api {
 
   /// Starts periodically (every 20 seconds) sending online beacon to the server
   void startBeacon({Function? isForegroundCheck}) {
-    _beacon();
-    var duration = Duration(seconds: 20);
-    _beaconTimer = Timer.periodic(duration, (Timer timer) {
-      if (isForegroundCheck != null && isForegroundCheck() || isForegroundCheck == null) _beacon();
+    beacon();
+    _beaconTimer = Timer.periodic(beaconInterval, (Timer timer) {
+      if (isForegroundCheck != null && isForegroundCheck() || isForegroundCheck == null) beacon();
     });
   }
 
@@ -268,6 +269,14 @@ class Api {
     return uri;
   }
 
+  Response? getCachedResponse(String cacheName, {bool allowInProgress = false}) {
+    final cacheItem = _responseCache[cacheName];
+    if (cacheItem != null && DateTime.now().isBefore(cacheItem.expireTime) && (allowInProgress || !cacheItem.inProgress)) {
+      return Response.fromResponse(cacheItem.response, cached: true);
+    }
+    return null;
+  }
+
   /// API call
   Future<Response> call(
     String method, {
@@ -290,16 +299,12 @@ class Api {
         var inProgressCounter = 0;
         while (_responseCache[cacheName] != null && _responseCache[cacheName]!.inProgress) {
           if (debug) print('cached (in progress): $cacheName');
-          if (inProgressCounter > 1500) {
-            // skip waiting and make a new request
-            break;
-          }
-          await Future.delayed(Duration(milliseconds: 10));
+          if (inProgressCounter > 3000) break; // skip waiting and make a new request
+          await Future.delayed(Duration(milliseconds: 5));
         }
-        if (inProgressCounter <= 1500) {
+        if (inProgressCounter <= 3000) {
           if (debug) print('cached (ready): $cacheName');
-          return Response.fromResponse(_responseCache[cacheName]!.response,
-              cached: true);
+          return Response.fromResponse(_responseCache[cacheName]!.response, cached: true);
         } else {
           if (debug) print('cache in progress wait exceeded, making a new request: $cacheName');
         }
@@ -338,8 +343,7 @@ class Api {
     }
 
     if (debug) {
-      print(
-          'Calling anonymous: $anonymous method: $method with data:\n${data.toString()}');
+      print('Calling anonymous: $anonymous method: $method with data:\n${data.toString()}');
     }
 
     var uri = generateMethodUri(
@@ -363,6 +367,8 @@ class Api {
         if (response.headers['content-type'] == 'application/x-download') {
           final binaryFileName = response.headers['content-disposition']?.ifContainsFilename()?.split('filename=').lastOrNull?.replaceAll('"', '').replaceAll("'", '');
           final serverVersion = response.headers['bh-version']?.toLowerCase();
+          final serverTimestampNum = num.tryParse(response.headers['timestamp'] ?? '');
+          final serverTimestamp = serverTimestampNum != null ? DateTime.fromMicrosecondsSinceEpoch(serverTimestampNum.toInt() * 1000) : null;
 
           final resp = Response(
             success: true,
@@ -370,6 +376,7 @@ class Api {
             isBinary: true,
             binaryFileName: binaryFileName,
             serverVersion: validateServerVersion(serverVersion) ? serverVersion : null,
+            serverTimestamp: serverTimestamp,
           );
           if (cacheName != null) {
             _responseCache[cacheName] = APICacheItem(
@@ -425,7 +432,9 @@ class Api {
         if (cacheName != null) {
           if (cacheErrors) {
             _responseCache[cacheName] = APICacheItem(
-                response: resp, expireTime: DateTime.now().add(cacheMaxAge));
+              response: resp,
+              expireTime: DateTime.now().add(cacheMaxAge),
+            );
           } else {
             _responseCache.remove(cacheName);
           }

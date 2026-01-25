@@ -8,6 +8,7 @@ class Response {
   final int dataHashCode;
   final String? binaryFileName;
   final String? serverVersion;
+  final DateTime? serverTimestamp;
 
   Response({required this.success,
     this.data,
@@ -18,6 +19,7 @@ class Response {
     int? dataHashCode,
     this.binaryFileName,
     this.serverVersion,
+    this.serverTimestamp,
   }) : dataHashCode = dataHashCode ?? data.toString().hashCode;
 
   factory Response.fail([String error = 'networkError']) {
@@ -48,6 +50,7 @@ class Response {
       dataHashCode: response.dataHashCode,
       binaryFileName: response.binaryFileName,
       serverVersion: response.serverVersion,
+      serverTimestamp: response.serverTimestamp,
     );
   }
 }

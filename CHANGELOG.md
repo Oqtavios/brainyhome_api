@@ -1,3 +1,9 @@
+## 0.12.15
+
+- Added "getCachedResponse" method for synchronously accessing unexpired cached responses
+- Made "beacon" a public method
+- Added support for server timestamp header
+
 ## 0.12.14
 
 - Added support for server version header
