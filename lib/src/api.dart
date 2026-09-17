@@ -293,6 +293,7 @@ class Api {
     String contentType = 'application/json; charset=utf-8',
     bool isCombinedRequest = false,
     bool dontOverwriteCacheIfHashIsIdentical = false,
+    bool restricted = false,
   }) async {
     if (cacheName != null) {
       if (_responseCache.containsKey(cacheName) && _responseCache[cacheName] != null && !refreshCache && DateTime.now().isBefore(_responseCache[cacheName]!.expireTime)) {
@@ -353,13 +354,13 @@ class Api {
     );
 
     try {
+      final headers = {
+        'Content-Type': binaryData != null ? contentType : 'application/json; charset=utf-8',
+        if (_headerAuth) 'Authorization': _token ?? '',
+        if (restricted) 'X-BrainyHome-Restricted': 'true',
+      };
       final response = await httpClient.post(Uri.parse(Uri.encodeFull(uri)),
-        headers: _headerAuth ? {
-          'Content-Type': binaryData != null ? contentType : 'application/json; charset=utf-8',
-          'Authorization': _token ?? '',
-        } : {
-          'Content-Type': binaryData != null ? contentType : 'application/json; charset=utf-8',
-        },
+        headers: headers,
         body: binaryData ?? json.encode(data),
       ).timeout(usingRemote ? remoteTimeout : localTimeout);
 
